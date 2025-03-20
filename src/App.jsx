@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 
 // `https://boolean-spec-frontend.vercel.app/freetestapi/products?search=${query}`
+// `https://boolean-spec-frontend.vercel.app/freetestapi/products/${id}`
 
 // FUNZIONE DI DEBOUNCE GENERICA
 /*Il DEBOUNCE accetta come parametri la funzione da "sospendere" per un tot di tempo specificato nel delay passato come argomento.
@@ -26,6 +27,7 @@ function App() {
   // All'aggiornarsi di QUERY, il componente viene renderizzato nuovamente, ma noi, per conservar ela CLOSURE (cioè il delay del DEBOUCE in questo caso), dobbiamo impedire che la funzione venga ripetuta goni volta, appunto tramite DEBOUNCE utilizzato in combinazione con USE-CALLBACK di REACT.
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Salvo questa funzione in una variabile perchè mi viene più comodo in seguito passarla come parametro al DEBOUNCE.
   const fetchProducts = async (query) => {
@@ -59,22 +61,50 @@ function App() {
 
   }, [query]);
 
+  const fetchProductDetails = async (id) => {
+    try {
+      const res = await fetch(`https://boolean-spec-frontend.vercel.app/freetestapi/products/${id}`);
+      const data = await res.json();
+      setSelectedProduct(data);
+      setQuery('');
+      setSuggestions([]);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <>
-      <h1>Autocomplete</h1>
-      <input
-        type="text"
-        placeholder="Cerca un prodotto..."
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-      />
-      {suggestions.length > 0 && (
-        <div className="debug">
-          {suggestions.map(product =>
-            <p key={product.id} className="debug">{product.name}</p>
-          )}
-        </div>
-      )}
+      <div>
+        <h1>Autocomplete</h1>
+        <input
+          type="text"
+          placeholder="Cerca un prodotto..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+        />
+        {suggestions.length > 0 && (
+          <div className="debug">
+            {suggestions.map(product =>
+              <p
+                key={product.id}
+                className="debug"
+                onClick={() => fetchProductDetails(product.id)}
+              >
+                {product.name}
+              </p>
+            )}
+          </div>
+        )}
+        {selectedProduct && (
+          <div className="debug">
+            <h2>{selectedProduct.name}</h2>
+            <img src={selectedProduct.image} alt={selectedProduct.name} />
+            <p>{selectedProduct.description}</p>
+            <p>Prezzo: {selectedProduct.price} €</p>
+          </div>
+        )}
+      </div>
     </>
   )
 }
